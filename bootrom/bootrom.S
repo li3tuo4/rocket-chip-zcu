@@ -6,8 +6,8 @@ _start:
   li s0, DRAM_BASE
   csrr a0, mhartid
   la a1, _dtb
-  jr s0
-
+  jr s0 
+  
 .section .text.hang, "ax", @progbits
 .globl _hang
 _hang:
@@ -21,4 +21,5 @@ _hang:
 .globl _dtb
 .align 5, 0
 _dtb:
-.ascii "DTB goes here"
+//.ascii "DTB goes here"
+.incbin "spike.dtb"

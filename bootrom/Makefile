@@ -11,5 +11,8 @@ all: $(bootrom_img)
 %.bin: %.elf
 	$(OBJCOPY) -O binary $< $@
 
-%.elf: %.S linker.ld
+%.dtb: %.dts
+	dtc -I dts -O dtb $< -o $@
+
+%.elf: %.S linker.ld spike.dtb
 	$(GCC) -Tlinker.ld $< -nostdlib -static -Wl,--no-gc-sections -o $@
