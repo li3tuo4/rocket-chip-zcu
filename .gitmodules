@@ -1,6 +1,7 @@
 [submodule "riscv-tools"]
 	path = riscv-tools
-	url = https://github.com/li3tuo4/riscv-tools.git
+	#url = https://github.com/li3tuo4/riscv-tools.git
+	url = https://github.com/li3tuo4/riscv-tools-zcu.git
 [submodule "hardfloat"]
 	path = hardfloat
 	url = https://github.com/ucb-bar/berkeley-hardfloat.git
