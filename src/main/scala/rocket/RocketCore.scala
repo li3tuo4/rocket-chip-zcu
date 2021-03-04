@@ -118,6 +118,12 @@ class Rocket(implicit p: Parameters) extends CoreModule()(p)
     Seq(new IDecode)
   } flatMap(_.table)
 
+  //Code for checksum
+  //register for echecksum 
+  //16 bits only
+  val echk_sum_reg = Reg(UInt(16.W))
+ 
+  //
   val ex_ctrl = Reg(new IntCtrlSigs)
   val mem_ctrl = Reg(new IntCtrlSigs)
   val wb_ctrl = Reg(new IntCtrlSigs)
