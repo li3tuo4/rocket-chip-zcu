@@ -121,7 +121,7 @@ class Rocket(implicit p: Parameters) extends CoreModule()(p)
   //Code for checksum
   //register for echecksum 
   //16 bits only
-  val echk_sum_reg = Reg(Bits(16.W))
+  //val echk_sum_reg = Reg(Bits(16.W))
   //
   val ex_ctrl = Reg(new IntCtrlSigs)
   val mem_ctrl = Reg(new IntCtrlSigs)
@@ -188,9 +188,9 @@ class Rocket(implicit p: Parameters) extends CoreModule()(p)
   val id_ctrl = Wire(new IntCtrlSigs()).decode(id_inst(0), decode_table)
 
   //check sum case
-  when (id_inst(0) === BitPat("b?????????????????????????1111110")) {
-    echk_sum_reg := id_ctrl.sel_alu2
-  }
+  // when (id_inst(0) === BitPat("b?????????????????????????1111110")) {
+  //   echk_sum_reg := id_ctrl.sel_alu2
+  // }
 
   val id_raddr3 = id_expanded_inst(0).rs3
   val id_raddr2 = id_expanded_inst(0).rs2
