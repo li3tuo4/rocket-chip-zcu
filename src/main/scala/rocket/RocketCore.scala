@@ -121,7 +121,7 @@ class Rocket(implicit p: Parameters) extends CoreModule()(p)
   //Code for checksum
   //register for echecksum 
   //16 bits only
-  //val echk_sum_reg = Reg(Bits(16.W))
+  val echk_sum_reg = Reg(UInt(16.W))
   //
   val ex_ctrl = Reg(new IntCtrlSigs)
   val mem_ctrl = Reg(new IntCtrlSigs)
