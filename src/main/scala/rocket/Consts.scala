@@ -44,6 +44,7 @@ trait ScalarOpConstants {
   def IMM_UJ = UInt(3, 3)
   def IMM_I  = UInt(4, 3)
   def IMM_Z  = UInt(5, 3)
+  def IMM_C  = UInt(6, 3)
 
   def A2_X    = BitPat("b??")
   def A2_ZERO = UInt(0, 2)
