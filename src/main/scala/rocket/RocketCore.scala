@@ -121,7 +121,7 @@ class Rocket(implicit p: Parameters) extends CoreModule()(p)
   //Code for checksum
   //register for echecksum 
   //16 bits only
-  val echk_sum_reg = Reg(UInt(16.W))
+  val echk_reg = Reg(UInt(16.W))
   //
   val ex_ctrl = Reg(new IntCtrlSigs)
   val mem_ctrl = Reg(new IntCtrlSigs)
@@ -187,15 +187,11 @@ class Rocket(implicit p: Parameters) extends CoreModule()(p)
   require(decodeWidth == 1 /* TODO */ && retireWidth == decodeWidth)
   val id_ctrl = Wire(new IntCtrlSigs()).decode(id_inst(0), decode_table)
 
-  //check sum case
-  // when (id_inst(0) === BitPat("b?????????????????????????1111110")) {
-  //   echk_sum_reg := id_ctrl.sel_alu2
-  // }
-
   val id_raddr3 = id_expanded_inst(0).rs3
   val id_raddr2 = id_expanded_inst(0).rs2
   val id_raddr1 = id_expanded_inst(0).rs1
-  val id_waddr  = id_expanded_inst(0).rd
+  //muxing to add shadow register
+  val id_waddr  = id_expanded_inst(0).rd 
   val id_load_use = Wire(Bool())
   val id_reg_fence = Reg(init=Bool(false))
   val id_ren = IndexedSeq(id_ctrl.rxs1, id_ctrl.rxs2)
@@ -361,6 +357,11 @@ class Rocket(implicit p: Parameters) extends CoreModule()(p)
       ex_reg_rs_lsb(0) := inst(log2Ceil(bypass_sources.size)-1, 0)
       ex_reg_rs_msb(0) := inst >> log2Ceil(bypass_sources.size)
     }
+    // Adding value of encrpyted checksum inside the echecksum register
+    when (ex_ctrl.sel_imm === IMM_C) {
+      echk_reg := ex_reg_inst(27,12)  
+    }
+  
   }
   when (!ctrl_killd || csr.io.interrupt || ibuf.io.inst(0).bits.replay) {
     ex_reg_cause := id_cause
