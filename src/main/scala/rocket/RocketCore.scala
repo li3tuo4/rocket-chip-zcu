@@ -119,10 +119,14 @@ class Rocket(implicit p: Parameters) extends CoreModule()(p)
   } flatMap(_.table)
 
   //Code for checksum
-  //register for echecksum 
+  //register for encrypted checksum via hardware key 
   //16 bits only
   val echk_reg = Reg(UInt(16.W))
-  //
+
+  //incremeental checksum for run-time checking
+  val inter_chk_reg = Reg(UInt(16.W))
+  var ichk_reg = Reg(init=UInt(1, 16))
+
   val ex_ctrl = Reg(new IntCtrlSigs)
   val mem_ctrl = Reg(new IntCtrlSigs)
   val wb_ctrl = Reg(new IntCtrlSigs)
@@ -356,12 +360,7 @@ class Rocket(implicit p: Parameters) extends CoreModule()(p)
       ex_reg_rs_bypass(0) := false
       ex_reg_rs_lsb(0) := inst(log2Ceil(bypass_sources.size)-1, 0)
       ex_reg_rs_msb(0) := inst >> log2Ceil(bypass_sources.size)
-    }
-    // Adding value of encrpyted checksum inside the echecksum register
-    when (ex_ctrl.sel_imm === IMM_C) {
-      echk_reg := ex_reg_inst(27,12)  
-    }
-  
+    }  
   }
   when (!ctrl_killd || csr.io.interrupt || ibuf.io.inst(0).bits.replay) {
     ex_reg_cause := id_cause
@@ -369,6 +368,18 @@ class Rocket(implicit p: Parameters) extends CoreModule()(p)
     ex_reg_raw_inst := id_raw_inst(0)
     ex_reg_pc := ibuf.io.pc
     ex_reg_btb_resp := ibuf.io.btb_resp
+
+    //No instruction has been killed at this stage
+    //Adding value of encrpyted checksum inside the echecksum register
+    when (ex_ctrl.sel_imm === IMM_C) {
+      //we only need 16 bits for the instruction
+      echk_reg := ex_reg_inst(27,12)  
+    } .elsewhen (ex_ctrl.sel_imm != IMM_C) {
+      //exclude chk instruction for runtime checksum calculation
+      //upper 16 bits of an instruction XOR with lower 16 bits of an instruction
+      inter_chk_reg := ex_reg_inst(31,16) ^ ex_reg_inst(15,0)
+      ichk_reg <= ichk_reg ^ inter_chk_reg
+    }
   }
 
   // replay inst in ex stage?
