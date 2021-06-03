@@ -125,7 +125,7 @@ class Rocket(implicit p: Parameters) extends CoreModule()(p)
 
   //incremeental checksum for run-time checking
   val inter_chk_reg = Reg(UInt(16.W))
-  var ichk_reg = Reg(init=UInt(1, 16))
+  var ichk_reg = Reg(init=UInt(0, 16))
 
   val ex_ctrl = Reg(new IntCtrlSigs)
   val mem_ctrl = Reg(new IntCtrlSigs)
@@ -194,7 +194,6 @@ class Rocket(implicit p: Parameters) extends CoreModule()(p)
   val id_raddr3 = id_expanded_inst(0).rs3
   val id_raddr2 = id_expanded_inst(0).rs2
   val id_raddr1 = id_expanded_inst(0).rs1
-  //muxing to add shadow register
   val id_waddr  = id_expanded_inst(0).rd 
   val id_load_use = Wire(Bool())
   val id_reg_fence = Reg(init=Bool(false))
@@ -368,13 +367,22 @@ class Rocket(implicit p: Parameters) extends CoreModule()(p)
     ex_reg_raw_inst := id_raw_inst(0)
     ex_reg_pc := ibuf.io.pc
     ex_reg_btb_resp := ibuf.io.btb_resp
-
+    
     //No instruction has been killed at this stage
     //Adding value of encrpyted checksum inside the echecksum register
     when (ex_ctrl.sel_imm === IMM_C) {
-      //we only need 16 bits for the instruction
-      echk_reg := ex_reg_inst(27,12)  
-    } .elsewhen (ex_ctrl.sel_imm != IMM_C) {
+      //do comparison between run-time checksum and compile-time checksum
+      //if false produce a trap signal
+      if (echk_reg != ichk_reg) {
+        val inst = Mux(ibuf.io.inst(0).bits.rvc, id_raw_inst(0)(15, 0), id_raw_inst(0))
+        ex_reg_rs_bypass(0) := false
+        ex_reg_rs_lsb(0) := inst(log2Ceil(bypass_sources.size)-1, 0)
+        ex_reg_rs_msb(0) := inst >> log2Ceil(bypass_sources.size)
+      } else {
+        //we only need 16 bits for the instruction
+        echk_reg := ex_reg_inst(27,12)  
+      }
+    } .elsewhen (ex_ctrl.sel_imm =/= IMM_C) {
       //exclude chk instruction for runtime checksum calculation
       //upper 16 bits of an instruction XOR with lower 16 bits of an instruction
       inter_chk_reg := ex_reg_inst(31,16) ^ ex_reg_inst(15,0)
