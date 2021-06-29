@@ -121,11 +121,8 @@ class Rocket(implicit p: Parameters) extends CoreModule()(p)
   //Code for checksum
   //register for encrypted checksum via hardware key 
   //16 bits only
-  val echk_reg = Reg(UInt(16.W))
-
-  //incremeental checksum for run-time checking
-  val inter_chk_reg = Reg(UInt(16.W))
-  var ichk_reg = Reg(init=UInt(0, 16))
+  val echk_reg = RegInit(UInt(16.W), 0.U)
+  var ichk_reg = RegInit(UInt(16.W), 0.U)
 
   val ex_ctrl = Reg(new IntCtrlSigs)
   val mem_ctrl = Reg(new IntCtrlSigs)
@@ -190,7 +187,7 @@ class Rocket(implicit p: Parameters) extends CoreModule()(p)
 
   require(decodeWidth == 1 /* TODO */ && retireWidth == decodeWidth)
   val id_ctrl = Wire(new IntCtrlSigs()).decode(id_inst(0), decode_table)
-
+  //printf("haha %b\n",id_inst(0))
   val id_raddr3 = id_expanded_inst(0).rs3
   val id_raddr2 = id_expanded_inst(0).rs2
   val id_raddr1 = id_expanded_inst(0).rs1
@@ -221,6 +218,7 @@ class Rocket(implicit p: Parameters) extends CoreModule()(p)
     id_ctrl.rocc && csr.io.decode(0).rocc_illegal ||
     id_csr_en && (csr.io.decode(0).read_illegal || !id_csr_ren && csr.io.decode(0).write_illegal) ||
     !ibuf.io.inst(0).bits.rvc && ((id_sfence || id_system_insn) && csr.io.decode(0).system_illegal)
+
   // stall decode for fences (now, for AMO.rl; later, for AMO.aq and FENCE)
   val id_amo_aq = id_inst(0)(26)
   val id_amo_rl = id_inst(0)(25)
@@ -258,6 +256,7 @@ class Rocket(implicit p: Parameters) extends CoreModule()(p)
     (Causes.fetch_access, "FETCH_ACCESS"),
     (Causes.illegal_instruction, "ILLEGAL_INSTRUCTION")
   )
+  
   coverExceptions(id_xcpt, id_cause, "DECODE", idCoverCauses)
 
   val dcache_bypass_data =
@@ -371,23 +370,13 @@ class Rocket(implicit p: Parameters) extends CoreModule()(p)
     //No instruction has been killed at this stage
     //Adding value of encrpyted checksum inside the echecksum register
     when (ex_ctrl.sel_imm === IMM_C) {
-      //do comparison between run-time checksum and compile-time checksum
-      //if false produce a trap signal
-      if (echk_reg != ichk_reg) {
-        val inst = Mux(ibuf.io.inst(0).bits.rvc, id_raw_inst(0)(15, 0), id_raw_inst(0))
-        ex_reg_rs_bypass(0) := false
-        ex_reg_rs_lsb(0) := inst(log2Ceil(bypass_sources.size)-1, 0)
-        ex_reg_rs_msb(0) := inst >> log2Ceil(bypass_sources.size)
-      } else {
-        //we only need 16 bits for the instruction
-        echk_reg := ex_reg_inst(27,12)  
-      }
-    } .elsewhen (ex_ctrl.sel_imm =/= IMM_C) {
-      //exclude chk instruction for runtime checksum calculation
-      //upper 16 bits of an instruction XOR with lower 16 bits of an instruction
-      inter_chk_reg := ex_reg_inst(31,16) ^ ex_reg_inst(15,0)
-      ichk_reg <= ichk_reg ^ inter_chk_reg
+      //we only need 16 bits for the instruction
+      echk_reg := ex_reg_inst(31,12) 
     }
+  }
+
+  when (ex_ctrl.sel_imm =/= IMM_C) {
+    ichk_reg := ichk_reg ^ ex_reg_inst(31,16) ^ ex_reg_inst(15,0)
   }
 
   // replay inst in ex stage?
@@ -431,6 +420,15 @@ class Rocket(implicit p: Parameters) extends CoreModule()(p)
   mem_reg_xcpt := !ctrl_killx && ex_xcpt
   mem_reg_xcpt_interrupt := !take_pc_mem_wb && ex_reg_xcpt_interrupt
 
+  // look for control flow instruction
+  //when (mem_cfi_taken) {
+    printf("I am ichk %d\n",ichk_reg)    
+    printf("I am echk %d\n",echk_reg)    
+
+    //assert(echk_reg === ichk_reg,"the instruction stream is corrupted")
+  //}
+  
+  
   // on pipeline flushes, cause mem_npc to hold the sequential npc, which
   // will drive the W-stage npc mux
   when (mem_reg_valid && mem_reg_flush_pipe) {
@@ -584,6 +582,7 @@ class Rocket(implicit p: Parameters) extends CoreModule()(p)
   csr.io.fcsr_flags := io.fpu.fcsr_flags
   csr.io.rocc_interrupt := io.rocc.interrupt
   csr.io.pc := wb_reg_pc
+
   val tval_valid = wb_xcpt && wb_cause.isOneOf(Causes.illegal_instruction, Causes.breakpoint,
     Causes.misaligned_load, Causes.misaligned_store,
     Causes.load_access, Causes.store_access, Causes.fetch_access,
