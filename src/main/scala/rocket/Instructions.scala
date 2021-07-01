@@ -342,6 +342,7 @@ object CSRs {
   val mcause = 0x342
   val mbadaddr = 0x343
   val mip = 0x344
+  val chk_csr = 0x345 // added csr
   val pmpcfg0 = 0x3a0
   val pmpcfg1 = 0x3a1
   val pmpcfg2 = 0x3a2
@@ -582,6 +583,7 @@ object CSRs {
     res += dcsr
     res += dpc
     res += dscratch
+    res += chk_csr // added csr
     res += mcycle
     res += minstret
     res += mhpmcounter3

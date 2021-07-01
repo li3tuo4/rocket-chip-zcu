@@ -259,6 +259,19 @@ class Rocket(implicit p: Parameters) extends CoreModule()(p)
   
   coverExceptions(id_xcpt, id_cause, "DECODE", idCoverCauses)
 
+  printf("ID STAGE\n");
+  printf("id cause %d\n",id_cause);
+  printf("id exception %d\n",id_xcpt);
+  printf("pc= %x %x",ibuf.io.pc.asSInt,ImmGen(IMM_UJ, id_inst(0)).asUInt);
+  printf("inst=[%x] DASM(%x)",id_inst.asUInt(),id_inst.asUInt())
+  printf("%d\n",!id_ctrl.legal)
+  printf("%d\n",(id_ctrl.mul || id_ctrl.div) && !csr.io.status.isa('m'-'a'))
+  printf("%d\n",id_ctrl.amo && !csr.io.status.isa('a'-'a'))
+  printf("%d\n",id_ctrl.dp && !csr.io.status.isa('d'-'a'))
+  printf("%d\n", ibuf.io.inst(0).bits.rvc && !csr.io.status.isa('c'-'a'))
+  printf("%d\n",id_csr_en && (csr.io.decode(0).read_illegal || !id_csr_ren && csr.io.decode(0).write_illegal))
+  printf("%d\n",!ibuf.io.inst(0).bits.rvc && ((id_sfence || id_system_insn) && csr.io.decode(0).system_illegal))
+
   val dcache_bypass_data =
     if (fastLoadByte) io.dmem.resp.bits.data(xLen-1, 0)
     else if (fastLoadWord) io.dmem.resp.bits.data_word_bypass(xLen-1, 0)
@@ -375,7 +388,8 @@ class Rocket(implicit p: Parameters) extends CoreModule()(p)
     }
   }
 
-  when (ex_ctrl.sel_imm =/= IMM_C) {
+  // integrity checking
+  when (ex_ctrl.sel_imm =/= IMM_C && csr.io.status.chk_csr =/= 0) {
     ichk_reg := ichk_reg ^ ex_reg_inst(31,16) ^ ex_reg_inst(15,0)
   }
 
@@ -421,13 +435,12 @@ class Rocket(implicit p: Parameters) extends CoreModule()(p)
   mem_reg_xcpt_interrupt := !take_pc_mem_wb && ex_reg_xcpt_interrupt
 
   // look for control flow instruction
-  //when (mem_cfi_taken) {
+  when (mem_cfi_taken) {
     printf("I am ichk %d\n",ichk_reg)    
-    printf("I am echk %d\n",echk_reg)    
-
-    //assert(echk_reg === ichk_reg,"the instruction stream is corrupted")
-  //}
-  
+    printf("I am echk %x\n",echk_reg)    
+    assert(echk_reg === ichk_reg,"the instruction stream is corrupted")
+  }
+  printf("value of my csr = %b\n",csr.io.status.chk_csr);
   
   // on pipeline flushes, cause mem_npc to hold the sequential npc, which
   // will drive the W-stage npc mux

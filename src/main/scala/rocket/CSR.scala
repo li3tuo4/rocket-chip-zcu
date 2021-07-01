@@ -16,6 +16,7 @@ class MStatus extends Bundle {
   // not truly part of mstatus, but convenient
   val debug = Bool()
   val isa = UInt(width = 32)
+  val chk_csr = UInt(width = 32) // add to access chk_csr from hardware
 
   val dprv = UInt(width = PRV.SZ) // effective privilege for data accesses
   val prv = UInt(width = PRV.SZ) // not truly part of mstatus, but convenient
@@ -273,6 +274,7 @@ class CSRFile(perfEventSets: EventSets = new EventSets(Seq()))(implicit p: Param
   val reg_pmp = Reg(Vec(nPMPs, new PMPReg))
 
   val reg_mie = Reg(UInt(width = xLen))
+  val reg_chk_csr = RegInit(UInt(width = xLen),0.U) //added csr
   val reg_mideleg = Reg(UInt(width = xLen))
   val reg_medeleg = Reg(UInt(width = xLen))
   val reg_mip = Reg(new MIP)
@@ -356,6 +358,7 @@ class CSRFile(perfEventSets: EventSets = new EventSets(Seq()))(implicit p: Param
     CSRs.mtvec -> reg_mtvec,
     CSRs.mip -> read_mip,
     CSRs.mie -> reg_mie,
+    CSRs.chk_csr -> reg_chk_csr, //added csr
     CSRs.mscratch -> reg_mscratch,
     CSRs.mepc -> readEPC(reg_mepc).sextTo(xLen),
     CSRs.mbadaddr -> reg_mbadaddr.sextTo(xLen),
@@ -377,7 +380,7 @@ class CSRFile(perfEventSets: EventSets = new EventSets(Seq()))(implicit p: Param
 
   if (usingFPU)
     read_mapping ++= fp_csrs
-
+  
   if (coreParams.haveBasicCounters) {
     read_mapping += CSRs.mcycle -> reg_cycle
     read_mapping += CSRs.minstret -> reg_instret
@@ -508,6 +511,7 @@ class CSRFile(perfEventSets: EventSets = new EventSets(Seq()))(implicit p: Param
   io.status.sd := io.status.fs.andR || io.status.xs.andR
   io.status.debug := reg_debug
   io.status.isa := reg_misa
+  io.status.chk_csr := reg_chk_csr //add to access attribute
   io.status.uxl := (if (usingUser) log2Ceil(xLen) - 4 else 0)
   io.status.sxl := (if (usingVM) log2Ceil(xLen) - 4 else 0)
   io.status.dprv := Reg(next = Mux(reg_mstatus.mprv && !reg_debug, reg_mstatus.mpp, reg_mstatus.prv))
@@ -660,6 +664,7 @@ class CSRFile(perfEventSets: EventSets = new EventSets(Seq()))(implicit p: Param
     }
     when (decoded_addr(CSRs.mie))      { reg_mie := wdata & supported_interrupts }
     when (decoded_addr(CSRs.mepc))     { reg_mepc := formEPC(wdata) }
+    when (decoded_addr(CSRs.chk_csr))  { reg_chk_csr := wdata }
     when (decoded_addr(CSRs.mscratch)) { reg_mscratch := wdata }
     if (mtvecWritable)
       when (decoded_addr(CSRs.mtvec))  { reg_mtvec := ~(~wdata | 2.U | Mux(wdata(0), UInt(((BigInt(1) << mtvecInterruptAlign) - 1) << mtvecBaseAlign), 0.U)) }
