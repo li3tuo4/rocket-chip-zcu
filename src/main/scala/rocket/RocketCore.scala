@@ -259,7 +259,8 @@ class Rocket(implicit p: Parameters) extends CoreModule()(p)
   coverExceptions(id_xcpt, id_cause, "DECODE", idCoverCauses)
 
   when (id_ctrl.sel_imm === IMM_C) {
-    printf("why ?? \n");
+    printf("%d",id_ctrl.legal.asUInt)
+    printf("why ?? \n")
   }
   
   printf("ID STAGE\n");
@@ -388,8 +389,8 @@ class Rocket(implicit p: Parameters) extends CoreModule()(p)
     //Adding value of encrpyted checksum inside the echecksum register
     when (ex_ctrl.sel_imm === IMM_C) {
       //we only need 16 bits for the instruction
-      echk_reg := ImmGen(IMM_U, ex_reg_inst)(27,8).asUInt
-      //echk_reg := ex_reg_inst(27,8).asUInt
+      echk_reg := ex_reg_inst(27,12).asUInt
+      printf("here\n");
     }
   }
   printf("echk value = %d\n",echk_reg)
@@ -438,7 +439,7 @@ class Rocket(implicit p: Parameters) extends CoreModule()(p)
   // look for control flow instruction
   when (mem_cfi_taken) {
     printf("I am ichk %d\n",ichk_reg)    
-    printf("I am echk %x\n",echk_reg)    
+    printf("I am echk %d\n",echk_reg)    
     assert(echk_reg === ichk_reg,"the instruction stream is corrupted")
   }
   printf("value of my csr = %b\n",csr.io.status.chk_csr);
