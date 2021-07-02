@@ -246,7 +246,7 @@ object Instructions {
   def RDINSTRETH         = BitPat("b11001000001000000010?????1110011")
   def SCALL              = BitPat("b00000000000000000000000001110011")
   def SBREAK             = BitPat("b00000000000100000000000001110011")
-  def CHK                = BitPat("b????????????????????????01111111")
+  def CHK                = BitPat("b????????????????????????01110111")
 }
 object Causes {
   val misaligned_fetch = 0x0
@@ -342,7 +342,7 @@ object CSRs {
   val mcause = 0x342
   val mbadaddr = 0x343
   val mip = 0x344
-  val chk_csr = 0x345 // added csr
+  val chk_csr = 0xff // added csr
   val pmpcfg0 = 0x3a0
   val pmpcfg1 = 0x3a1
   val pmpcfg2 = 0x3a2

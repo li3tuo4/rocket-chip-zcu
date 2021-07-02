@@ -63,7 +63,7 @@ class IntCtrlSigs extends Bundle {
                    sel_alu1, sel_imm, alu_dw, alu_fn, mem, mem_cmd, mem_type,
                    rfs1, rfs2, rfs3, wfd, mul, div, wxd, csr, fence_i, fence, amo, dp)
     sigs zip decoder map {case(s,d) => s := d}
-    this
+    this    
   }
 }
 
@@ -125,7 +125,7 @@ class IDecode(implicit val p: Parameters) extends DecodeConstants
     CSRRSI->    List(Y,N,N,N,N,N,N,N,A2_IMM, A1_ZERO,IMM_Z, DW_XPR,FN_ADD,   N,M_X,        MT_X, N,N,N,N,N,N,Y,CSR.S,N,N,N,N),
     CSRRCI->    List(Y,N,N,N,N,N,N,N,A2_IMM, A1_ZERO,IMM_Z, DW_XPR,FN_ADD,   N,M_X,        MT_X, N,N,N,N,N,N,Y,CSR.C,N,N,N,N),
     
-    CHK->       List(Y,N,N,N,N,N,N,N,A2_IMM, A1_ZERO,IMM_C, DW_XPR,FN_ADD,   N,M_X,        MT_X, N,N,N,N,N,N,Y,CSR.N,N,N,N,N))
+    CHK->       List(Y,N,N,N,N,N,N,N,A2_IMM, A1_ZERO,IMM_C, DW_XPR,FN_ADD,   N,M_X,        MT_X, N,N,N,N,N,N,Y,CSR.N,N,N,N,N)) //added chk
 }
 
 class SDecode(implicit val p: Parameters) extends DecodeConstants
