@@ -258,25 +258,6 @@ class Rocket(implicit p: Parameters) extends CoreModule()(p)
   
   coverExceptions(id_xcpt, id_cause, "DECODE", idCoverCauses)
 
-  when (id_ctrl.sel_imm === IMM_C) {
-    printf("%d",id_ctrl.legal.asUInt)
-    printf("why ?? \n")
-  }
-  
-  printf("ID STAGE\n");
-  printf("id cause %d\n",id_cause);
-  printf("id exception %d\n",id_xcpt);
-  printf("pc= %x\n",ibuf.io.pc.asSInt);
-  printf("%x\n",id_inst.asUInt());
-  printf("DASM(%x)\n",id_inst.asUInt())
-  printf("%d\n",!id_ctrl.legal)
-  printf("%d\n",(id_ctrl.mul || id_ctrl.div) && !csr.io.status.isa('m'-'a'))
-  printf("%d\n",id_ctrl.amo && !csr.io.status.isa('a'-'a'))
-  printf("%d\n",id_ctrl.dp && !csr.io.status.isa('d'-'a'))
-  printf("%d\n", ibuf.io.inst(0).bits.rvc && !csr.io.status.isa('c'-'a'))
-  printf("%d\n",id_csr_en && (csr.io.decode(0).read_illegal || !id_csr_ren && csr.io.decode(0).write_illegal))
-  printf("%d\n",!ibuf.io.inst(0).bits.rvc && ((id_sfence || id_system_insn) && csr.io.decode(0).system_illegal))  
-
   val dcache_bypass_data =
     if (fastLoadByte) io.dmem.resp.bits.data(xLen-1, 0)
     else if (fastLoadWord) io.dmem.resp.bits.data_word_bypass(xLen-1, 0)
@@ -390,10 +371,8 @@ class Rocket(implicit p: Parameters) extends CoreModule()(p)
     when (ex_ctrl.sel_imm === IMM_C) {
       //we only need 16 bits for the instruction
       echk_reg := ex_reg_inst(27,12).asUInt
-      printf("here\n");
     }
   }
-  printf("echk value = %d\n",echk_reg)
 
   // replay inst in ex stage?
   val ex_pc_valid = ex_reg_valid || ex_reg_replay || ex_reg_xcpt_interrupt
@@ -436,13 +415,6 @@ class Rocket(implicit p: Parameters) extends CoreModule()(p)
   mem_reg_xcpt := !ctrl_killx && ex_xcpt
   mem_reg_xcpt_interrupt := !take_pc_mem_wb && ex_reg_xcpt_interrupt
 
-  // look for control flow instruction
-  when (mem_cfi_taken) {
-    printf("I am ichk %d\n",ichk_reg)    
-    printf("I am echk %d\n",echk_reg)    
-    assert(echk_reg === ichk_reg,"the instruction stream is corrupted")
-  }
-  printf("value of my csr = %b\n",csr.io.status.chk_csr);
   
   // on pipeline flushes, cause mem_npc to hold the sequential npc, which
   // will drive the W-stage npc mux
@@ -477,8 +449,12 @@ class Rocket(implicit p: Parameters) extends CoreModule()(p)
     // integrity checking
     when (ex_ctrl.sel_imm =/= IMM_C && csr.io.status.chk_csr =/= 0) {
       ichk_reg := ichk_reg ^ ex_reg_inst(31,16) ^ ex_reg_inst(15,0)
-      printf("ex reg is %x\n",ex_reg_inst)
-      printf("current ichk_reg is %d\n",ichk_reg)
+    }
+    // look for control flow instruction
+    when (mem_cfi_taken && csr.io.status.chk_csr =/= 0) {
+      assert(echk_reg === ichk_reg,"the instruction stream is corrupted")
+      //need to reset ichk
+      ichk_reg := 0.U
     }
   }
 
