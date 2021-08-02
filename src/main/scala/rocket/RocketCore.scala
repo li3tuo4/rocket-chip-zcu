@@ -569,7 +569,7 @@ class Rocket(implicit p: Parameters) extends CoreModule()(p)
     rf.write(rf_waddr, rf_wdata)   
     printf("value of register %x \n value of data %x\n",rf_waddr,rf_wdata) 
   }
-
+  printf("here\n")
   // hook up control/status regfile
   csr.io.decode(0).csr := id_raw_inst(0)(31,20)
   csr.io.exception := wb_xcpt
