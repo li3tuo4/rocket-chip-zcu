@@ -246,7 +246,7 @@ object Instructions {
   def RDINSTRETH         = BitPat("b11001000001000000010?????1110011")
   def SCALL              = BitPat("b00000000000000000000000001110011")
   def SBREAK             = BitPat("b00000000000100000000000001110011")
-  def CHK                = BitPat("b????????????????????100101110111") //added instruction opcode //using 10010 as rd but in reality no write to dest occurs
+  def CHK                = BitPat("b0000????????????????100101110111") //added instruction opcode //using 10010 as rd but in reality no write to dest occurs
 }
 object Causes {
   val misaligned_fetch = 0x0
