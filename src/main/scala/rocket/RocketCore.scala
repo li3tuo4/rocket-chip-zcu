@@ -450,10 +450,10 @@ class Rocket(implicit p: Parameters) extends CoreModule()(p)
     when (ex_ctrl.sel_imm =/= IMM_C && csr.io.status.chk_csr =/= 0) {
       ichk_reg := ichk_reg ^ ex_reg_inst(31,16) ^ ex_reg_inst(15,0)
     }
+
     // look for control flow instruction
-    when (mem_cfi_taken && csr.io.status.chk_csr =/= 0) {
+    when (mem_cfi && csr.io.status.chk_csr =/= 0) {
       assert(echk_reg === ichk_reg,"the instruction stream is corrupted")
-      //need to reset ichk
       ichk_reg := 0.U
     }
   }
@@ -565,11 +565,8 @@ class Rocket(implicit p: Parameters) extends CoreModule()(p)
                  Mux(wb_ctrl.csr =/= CSR.N, csr.io.rw.rdata,
                  Mux(wb_ctrl.mul, mul.map(_.io.resp.bits.data).getOrElse(wb_reg_wdata),
                  wb_reg_wdata))))
-  when (rf_wen) { 
-    rf.write(rf_waddr, rf_wdata)   
-    printf("value of register %x \n value of data %x\n",rf_waddr,rf_wdata) 
-  }
-  printf("here\n")
+  when (rf_wen) { rf.write(rf_waddr, rf_wdata) }
+  
   // hook up control/status regfile
   csr.io.decode(0).csr := id_raw_inst(0)(31,20)
   csr.io.exception := wb_xcpt

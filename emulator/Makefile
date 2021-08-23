@@ -36,6 +36,9 @@ endif
 $(output_dir)/%.run: $(output_dir)/% $(emu)
 	./$(emu) +max-cycles=$(timeout_cycles) $< 2> /dev/null 2> $@ && [ $$PIPESTATUS -eq 0 ]
 
+# $(output_dir)/%.out: $(output_dir)/% $(emu)
+# 	./$(emu) +max-cycles=$(timeout_cycles) +verbose $< $(disasm) $@ && [ $$PIPESTATUS -eq 0 ]
+
 $(output_dir)/%.out: $(output_dir)/% $(emu)
 	./$(emu) +max-cycles=$(timeout_cycles) +verbose $< $(disasm) $@ && [ $$PIPESTATUS -eq 0 ]
 
